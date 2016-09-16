@@ -1,0 +1,3 @@
+[submodule "src/ShoddyRepl"]
+	path = src/ShoddyRepl
+	url = git@github.com:hkmix/ShoddyRepl.git
