@@ -19,8 +19,12 @@ public:
 
     void add_fan_score(int fan, int score);
     void add_result(std::size_t winning_player, int fan, bool self_draw, std::size_t losing_player = 0);
-    void print_result(std::size_t count) const;
+    std::string human_readable_result(std::size_t count) const;
     void print_scores() const;
+    bool delete_score();
+    bool delete_score(std::size_t index);
+    void print_report() const;
+    void print_csv() const;
     void default_fans();
     std::size_t player_index(const std::string &player_name) const;
 
