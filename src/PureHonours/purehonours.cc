@@ -339,9 +339,9 @@ void PureHonours::print_report() const
 void PureHonours::print_csv() const
 {
     // Generate file object
-    auto name = filename();
+    auto name = filename() + ".csv";
     try {
-        auto file = std::ofstream(name);
+        auto file = std::ofstream(name, std::ios_base::out | std::ios_base::trunc);
         if (!file.is_open()) {
             std::cerr << "Failed to open file for writing: " << name << std::endl;
         }
@@ -420,7 +420,21 @@ const std::string PureHonours::filename() const
         ss << "_" << player_name;
     }
 
-    ss << ".csv";
+    return ss.str();
+}
+
+/**
+ * Generate filename for export using players with no date
+ * @return Filename for export
+ */
+const std::string PureHonours::history_filename() const
+{
+    std::stringstream ss;
+    ss << "history";
+    for (auto &player_name : player_names_) {
+        ss << "_" << player_name;
+    }
+    ss << ".purehonours";
 
     return ss.str();
 }

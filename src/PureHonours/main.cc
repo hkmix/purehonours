@@ -3,11 +3,47 @@
 
 #include <cctype>
 #include <exception>
+#include <fstream>
 #include <iostream>
+#include <vector>
+
+namespace
+{
+
+void write_history(const std::string &filename,
+                   const std::vector<std::string> &commands)
+{
+    try {
+        auto file = std::ofstream(filename, std::ios_base::out | std::ios_base::trunc);
+        if (!file.is_open()) {
+            std::cerr << "Failed to open file for writing: " << filename << std::endl;
+        }
+
+        for (auto &cmd : commands) {
+            file << cmd << std::endl;
+        }
+
+        file.close();
+    } catch (...) {
+        std::cerr << "Encountered error while exporting commands." << std::endl;
+        throw;
+    }
+}
+
+void add_history(std::vector<std::string> &commands,
+                 const std::string &input,
+                 const PureHonours &game)
+{
+    commands.push_back(input);
+    write_history(game.history_filename(), commands);
+}
+
+} // namespace
 
 int main()
 {
     Shoddy repl;
+    std::vector<std::string> inputs;
 
     // Get players
     int players = 0;
@@ -24,6 +60,7 @@ int main()
         }
 
         if (players >= 2 && players <= 4) {
+            inputs.push_back(input.raw_input);
             break;
         } else {
             std::cout << "Invalid player count." << std::endl;
@@ -46,6 +83,7 @@ int main()
         }
 
         player_names.push_back(input.command);
+        inputs.push_back(input.raw_input);
         ++count;
     }
 
@@ -59,6 +97,7 @@ int main()
         if (!input.valid) {
             return 0;
         } else if (input.command[0] == 'd') {
+            add_history(inputs, input.raw_input, game);
             game.default_fans();
             break;
         } else if (input.arg_count < 1) {
@@ -68,6 +107,7 @@ int main()
 
         try {
             game.add_fan_score(std::stoi(input.command), std::stoi(input.args[0]));
+            add_history(inputs, input.raw_input, game);
         } catch (std::invalid_argument&) {
             std::cout << "Invalid input." << std::endl;
             continue;
@@ -75,16 +115,12 @@ int main()
     }
 
     // Game loop
+    const std::string prompt = "\nInput command (? for help): ";
     while (true) {
-        const std::string prompt = "\nInput command (? for help): ";
         auto input = repl.get_line(prompt);
-        if (!input.valid) {
-            return 0;
-        }
-
-        if (input.command[0] == 'q') {
+        if (!input.valid || input.command[0] == 'q') {
             // Quit
-            break;
+            return 0;
         } else if (input.command[0] == '?') {
             // Help
             std::cout << "Commands:\n"
@@ -106,7 +142,7 @@ int main()
                       << "    Print short score report\n"
                       << "  p\n"
                       << "    Print full score report\n"
-                      << "  x\n"
+                      << "  c\n"
                       << "    Export results to CSV file\n";
         } else if (input.command[0] == 'a' && input.arg_count >= 3) {
             // Add
@@ -133,6 +169,7 @@ int main()
 
             if (input.args[2] == "self") {
                 game.add_result(winner_index, fan, true);
+                add_history(inputs, input.raw_input, game);
             } else {
                 // Check for direct gong
                 auto loser = input.args[2];
@@ -159,6 +196,7 @@ int main()
 
                 // Add score
                 game.add_result(winner_index, fan, is_gong_self, loser_index, is_gong_self);
+                add_history(inputs, input.raw_input, game);
             }
         } else if (input.command[0] == 'd') {
             // Check for index
@@ -171,12 +209,14 @@ int main()
                     continue;
                 }
                 if (game.delete_score(index)) {
+                    add_history(inputs, input.raw_input, game);
                     std::cout << "Deleted round " << index << "." << std::endl;
                 } else {
                     std::cout << "Invalid round number." << std::endl;
                 }
             } else {
                 if (game.delete_score()) {
+                    add_history(inputs, input.raw_input, game);
                     std::cout << "Deleted last round." << std::endl;
                 } else {
                     std::cout << "No entries to delete." << std::endl;
@@ -196,4 +236,3 @@ int main()
 
     return 0;
 }
-

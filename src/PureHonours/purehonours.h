@@ -32,6 +32,7 @@ public:
     void print_csv() const;
     void default_fans();
     void export_file() const;
+    const std::string history_filename() const;
     std::size_t player_index(const std::string &player_name) const;
 
 private:
