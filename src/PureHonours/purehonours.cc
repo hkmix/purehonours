@@ -106,7 +106,11 @@ int PureHonours::fan_score(int fan, bool self_draw) const
  * @param fan Number of fan of the win
  * @param losing_player Index of losing player (default 0; ignored if self-draw)
  */
-void PureHonours::add_result(std::size_t winning_player, int fan, bool self_draw, std::size_t losing_player)
+void PureHonours::add_result(std::size_t winning_player,
+                             int fan,
+                             bool self_draw,
+                             std::size_t losing_player,
+                             bool gong_direct)
 {
     // Check for min fan
     auto score = fan_score(fan, self_draw);
@@ -123,16 +127,23 @@ void PureHonours::add_result(std::size_t winning_player, int fan, bool self_draw
         self_draw,
         fan,
         losing_player,
+        gong_direct,
     });
 
     // Add score
     std::vector<int> score_set;
     for (std::size_t i = 0; i < static_cast<std::size_t>(player_count_); ++i) {
         if (i == winning_player && self_draw) {
+            // Win by self-draw
             score_set.push_back((player_count_ - 1) * score);
         } else if (i == winning_player) {
+            // Regular win
             score_set.push_back(score);
-        } else if (i == losing_player || self_draw) {
+        } else if (i == losing_player && gong_direct) {
+            // Lose by gong-direct
+            score_set.push_back((player_count_ - 1) * -score);
+        } else if (i == losing_player || (self_draw && !gong_direct)) {
+            // Regular loss
             score_set.push_back(-score);
         } else {
             score_set.push_back(0);
@@ -162,8 +173,13 @@ std::string PureHonours::human_readable_result(std::size_t count) const
     ss << player_names_.at(result.winning_player)
        << " wins " << result.fan << " fan ";
 
-    if (result.self_draw) {
+    if (result.self_draw && !result.gong_direct) {
         ss << std::string("by self draw (") << fan_score(result.fan, true) << " from all).";
+    } else if (result.self_draw) {
+        ss << std::string("by self draw (")
+           << (fan_score(result.fan, true) * (player_count_ - 1))
+           << ") off a gong from "
+           << player_names_.at(result.losing_player) << ".";
     } else {
         ss << "from " << player_names_.at(result.losing_player)
            << " (" << fan_score(result.fan) << ").";

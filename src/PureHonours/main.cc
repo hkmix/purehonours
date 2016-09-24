@@ -14,7 +14,7 @@ int main()
     while (true) {
         auto input = repl.get_line("How many players? ");
         if (!input.valid) {
-            continue;
+            return 0;
         }
         try {
             players = std::stoi(input.command);
@@ -36,11 +36,11 @@ int main()
         const std::string prompt = "Initials for player " + std::to_string(count + 1) + ": ";
         auto input = repl.get_line(prompt);
         if (!input.valid) {
-            continue;
+            return 0;
         }
 
-        // Prevent "self" from being a name (used in command)
-        if (input.command == "self") {
+        // Prevent "self" and "selfg" from being a name (used in command)
+        if (input.command == "self" || input.command == "selfg") {
             std::cout << "Players cannot be named \"self\"." << std::endl;
             continue;
         }
@@ -57,8 +57,7 @@ int main()
     while (true) {
         auto input = repl.get_line("Add fan/score (Enter to finish, \"d\" for default): ");
         if (!input.valid) {
-            std::cout << "Invalid input." << std::endl;
-            continue;
+            return 0;
         } else if (input.command[0] == 'd') {
             game.default_fans();
             break;
@@ -80,8 +79,7 @@ int main()
         const std::string prompt = "\nInput command (? for help): ";
         auto input = repl.get_line(prompt);
         if (!input.valid) {
-            std::cout << "Invalid command." << std::endl;
-            continue;
+            return 0;
         }
 
         if (input.command[0] == 'q') {
@@ -96,6 +94,8 @@ int main()
                       << "    Quit\n"
                       << "  a <winner> <fan> self\n"
                       << "    Add self-touch win by <winner>\n"
+                      << "  a <winner> <fan> selfg <loser>\n"
+                      << "    Add self-touch off gong win by <winner>\n"
                       << "  a <winner> <fan> <loser>\n"
                       << "    Add a win by <winner>, fed by <loser>\n"
                       << "  d\n"
@@ -108,7 +108,7 @@ int main()
                       << "    Print full score report\n"
                       << "  x\n"
                       << "    Export results to CSV file\n";
-        } else if (input.command[0] == 'a' && input.arg_count == 3) {
+        } else if (input.command[0] == 'a' && input.arg_count >= 3) {
             // Add
             auto winner = input.args[0];
             for (auto &c : winner) {
@@ -134,20 +134,31 @@ int main()
             if (input.args[2] == "self") {
                 game.add_result(winner_index, fan, true);
             } else {
-                // Check loser
+                // Check for direct gong
                 auto loser = input.args[2];
+                bool is_gong_self = false;
+                std::size_t loser_index = 0;
+                if (loser == "selfg" && input.arg_count >= 4) {
+                    is_gong_self = true;
+                    loser = input.args[3];
+                } else if (loser == "selfg") {
+                    std::cout << "Invalid loser initials for direct hit gong win." << std::endl;
+                    continue;
+                }
+
+                // Not direct gong
                 for (auto &c : loser) {
                     c = std::toupper(c);
                 }
 
-                std::size_t loser_index = game.player_index(loser);
+                loser_index = game.player_index(loser);
                 if (loser_index == static_cast<std::size_t>(players)) {
                     std::cout << "Invalid loser initials." << std::endl;
                     continue;
                 }
 
                 // Add score
-                game.add_result(winner_index, fan, false, loser_index);
+                game.add_result(winner_index, fan, is_gong_self, loser_index, is_gong_self);
             }
         } else if (input.command[0] == 'd') {
             // Check for index
