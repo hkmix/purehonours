@@ -1,1 +1,11 @@
-# Created by .ignore support plugin (hsz.mobi)
+/**/*.swo
+/**/*.swp
+
+.ycm_extra_conf.*
+
+CMakeCache.txt
+CMakeFiles
+cmake_install.cmake
+Makefile
+purehonours
+
