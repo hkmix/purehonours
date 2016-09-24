@@ -1,6 +1,10 @@
 #include "purehonours.h"
 
 #include <algorithm>
+#include <chrono>
+#include <ctime>
+#include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 
@@ -318,27 +322,43 @@ void PureHonours::print_report() const
  */
 void PureHonours::print_csv() const
 {
-    // Print title row
-    std::cout << "Round";
-    for (auto &name : player_names_) {
-        std::cout << "," << name;
-    }
-    std::cout << ",Notes" << std::endl;
-
-    // Print scores
-    for (std::size_t i = 0; i < scores_.size(); ++i) {
-        const auto &score_set = scores_[i];
-        std::cout << (i + 1);
-
-        for (auto &score : score_set) {
-            std::cout << ",";
-            if (score != 0) {
-                std::cout << score;
-            }
+    // Generate file object
+    auto name = filename();
+    try {
+        auto file = std::ofstream(name);
+        if (!file.is_open()) {
+            std::cerr << "Failed to open file for writing: " << name << std::endl;
         }
 
-        std::cout << "," << human_readable_result(i) << std::endl;
+        // Print title row
+        file << "Round";
+        for (auto &name : player_names_) {
+            file << "," << name;
+        }
+        file << ",Notes" << std::endl;
+
+        // Print scores
+        for (std::size_t i = 0; i < scores_.size(); ++i) {
+            const auto &score_set = scores_[i];
+            file << (i + 1);
+
+            for (auto &score : score_set) {
+                file << ",";
+                if (score != 0) {
+                    file << score;
+                }
+            }
+
+            file << "," << human_readable_result(i) << std::endl;
+        }
+
+        // Finished with file
+        file.close();
+    } catch (...) {
+        throw;
     }
+
+    std::cout << "Saved to: " << name << std::endl;
 }
 
 /**
@@ -364,4 +384,27 @@ bool PureHonours::delete_score(std::size_t index)
 bool PureHonours::delete_score()
 {
     return delete_score(scores_.size());
+}
+
+/**
+ * Generate filename for export using players
+ * @return Filename for export
+ */
+const std::string PureHonours::filename() const
+{
+    using sc = std::chrono::system_clock;
+
+    const auto today = sc::to_time_t(sc::now());
+    auto today_time = std::localtime(&today);
+
+    std::stringstream ss;
+    ss << std::put_time(today_time, "%Y%M%d_%H%M%S");
+
+    for (auto &player_name : player_names_) {
+        ss << "_" << player_name;
+    }
+
+    ss << ".csv";
+
+    return ss.str();
 }

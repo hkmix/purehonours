@@ -107,7 +107,7 @@ int main()
                       << "  p\n"
                       << "    Print full score report\n"
                       << "  x\n"
-                      << "    Export results to file\n";
+                      << "    Export results to CSV file\n";
         } else if (input.command[0] == 'a' && input.arg_count == 3) {
             // Add
             auto winner = input.args[0];

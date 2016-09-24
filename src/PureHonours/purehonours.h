@@ -26,6 +26,7 @@ public:
     void print_report() const;
     void print_csv() const;
     void default_fans();
+    void export_file() const;
     std::size_t player_index(const std::string &player_name) const;
 
 private:
@@ -37,6 +38,7 @@ private:
 
     int fan_score(int fan, bool self_draw = false) const;
     std::vector<int> tally() const;
+    const std::string filename() const;
 };
 
 #endif // __PUREHONOURS_H
